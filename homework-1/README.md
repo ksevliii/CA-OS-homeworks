@@ -1,4 +1,3 @@
-
 # ИДЗ1, вариант 42: Морской грузовой порт
 
 Дискретно-событийная модель работы морского порта на языке C. Программа симулирует жизненный цикл судов: прибытие, швартовку, разгрузку кранами на склад и отбытие.
@@ -143,13 +142,13 @@ homework-1/
 ### Клонирование проекта
 
 ```bash
-  git clone https://github.com/ksevliii/homework-1.git
+  git clone https://github.com/ksevliii/CA-OS-homeworks.git
 ```
 
 ### Переход в директорию
 
 ```bash
-  cd homework-1
+  cd CA-OS-homeworks/homework-1
 ```
 
 ### Сборка
