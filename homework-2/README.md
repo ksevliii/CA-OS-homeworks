@@ -76,6 +76,7 @@
 ```bash
   cd homework-2
 ```
+### Запуск
 
 ```bash
 make clean && make              # синхронизация семафорами sem_t (по умолчанию)
