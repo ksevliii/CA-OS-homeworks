@@ -57,4 +57,14 @@ dkms.conf
 build/
 docs/
 port_sim
-port.log
+*.log
+port_fork_named
+port_fork_unnamed
+port_dispatcher
+port_fifo_dispatcher
+port_worker
+homework-3/port_berth
+homework-3/port_crane
+homework-3/port_ship
+homework-3/port_tug
+homework-3/port_warehouse
