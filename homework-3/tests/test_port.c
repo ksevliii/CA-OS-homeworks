@@ -161,20 +161,6 @@ static int runAction(const char *mode, const char *action)
       testPause(50);
       kill(run.server, SIGINT);
     }
-    else if (!strcmp(action, "stalled"))
-    {
-      kill(run.workers[0], SIGSTOP);
-      testPause(6000);
-      int status;
-      if (waitpid(run.server, &status, WNOHANG) != 0)
-      {
-        run.server = 0;
-        stopRun(&run);
-        return 0;
-      }
-      kill(run.workers[0], SIGCONT);
-      kill(run.server, SIGINT);
-    }
     else
     {
       kill(run.server, !strcmp(action, "SIGTERM") ? SIGTERM : SIGINT);
@@ -326,31 +312,46 @@ int main(void)
                               {"loading_partial_reserved", 2},
                               {"unloading_dependency", 2},
                               {"unloading_dependency_reserved", 2}};
-  for (int mode = 0; mode < 4; ++mode)
+  int success = 1;
+
+  for (int mode = 0; mode < 4 && success; ++mode)
   {
-    for (size_t fixture = 0; fixture < sizeof(fixtures) / sizeof(fixtures[0]);
+    for (size_t fixture = 0;
+         fixture < sizeof(fixtures) / sizeof(fixtures[0]) && success;
          ++fixture)
-      if (!runFixture(modes[mode], &fixtures[fixture]))
-        goto failure;
-    if (!runAction(modes[mode], "SIGINT") ||
-        !runAction(modes[mode], "SIGTERM") ||
-        !runAction(modes[mode], "reuse") || !runAction(modes[mode], "reuse"))
-      goto failure;
+    {
+      success = runFixture(modes[mode], &fixtures[fixture]);
+    }
+
+    if (success)
+    {
+      success = runAction(modes[mode], "SIGINT") &&
+                runAction(modes[mode], "SIGTERM") &&
+                runAction(modes[mode], "reuse") &&
+                runAction(modes[mode], "reuse");
+    }
   }
-  for (int mode = 2; mode < 4; ++mode)
-    if (!runAction(modes[mode], "rolecheck") ||
-        !runAction(modes[mode], "crash") ||
-        !runAction(modes[mode], "duplicate") ||
-        !runAction(modes[mode], "stopped_shutdown"))
-      goto failure;
-  if (!runAction("shm", "stalled") || !testInput())
-    goto failure;
+
+  for (int mode = 2; mode < 4 && success; ++mode)
+  {
+    success = runAction(modes[mode], "rolecheck") &&
+              runAction(modes[mode], "crash") &&
+              runAction(modes[mode], "duplicate") &&
+              runAction(modes[mode], "stopped_shutdown");
+  }
+
+  if (success)
+    success = testInput();
+
+  if (!success)
+  {
+    stopRun(&run);
+    fprintf(stderr, "FAIL after %d groups; input files: %s\n%s\n",
+            passed, temporary, run.text);
+    return 1;
+  }
+
   rmdir(temporary);
   printf("ALL %d GROUPS PASSED\n", passed);
   return 0;
-failure:
-  stopRun(&run);
-  fprintf(stderr, "FAIL after %d groups; input files: %s\n%s\n", passed,
-          temporary, run.text);
-  return 1;
 }

@@ -5,14 +5,12 @@ int workerLoop(Transport *transport, int actor)
   SOFT_ASSERT(transport != NULL, "Transport is required", 3);
   SOFT_ASSERT(actor >= 0 && actor < transport->meta.count, "Invalid actor", 3);
   ActorState state = {.occupant = -1};
-  double last = 0;
-  heartbeat(transport, actor, &last);
+
   Message message = {.action = HELLO};
   if (!putMessage(transport, actor, 1, message))
     return 3;
   while (!interrupted)
   {
-    heartbeat(transport, actor, &last);
     if (kill(transport->meta.pid, 0) < 0 && errno == ESRCH)
       return 3;
     int result = waitMessage(transport, actor, 0, &message);
@@ -32,7 +30,7 @@ int workerLoop(Transport *transport, int actor)
       int step = left > 20 ? 20 : (int)left;
       pauseMs(step);
       left -= step;
-      heartbeat(transport, actor, &last);
+
       if (kill(transport->meta.pid, 0) < 0 && errno == ESRCH)
         return 3;
     }

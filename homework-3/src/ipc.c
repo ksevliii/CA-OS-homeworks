@@ -51,25 +51,16 @@ static int setupActor(Transport *transport, int index, int owner)
         sem_destroy(&transport->shared->slots[index].requestSem);
         return 0;
       }
-      if (sem_init(&transport->shared->slots[index].heartbeatSem, 1, 0) < 0)
-      {
-        sem_destroy(&transport->shared->slots[index].requestSem);
-        sem_destroy(&transport->shared->slots[index].replySem);
-        return 0;
-      }
       transport->initialized++;
     }
     transport->req[index] = &transport->shared->slots[index].requestSem;
     transport->rep[index] = &transport->shared->slots[index].replySem;
-    transport->heartbeat[index] = &transport->shared->slots[index].heartbeatSem;
   }
   else
   {
     transport->req[index] = openSem(transport, index, 'q', owner, 0);
     transport->rep[index] = openSem(transport, index, 'r', owner, 0);
-    transport->heartbeat[index] = openSem(transport, index, 'h', owner, 0);
-    if (!transport->req[index] || !transport->rep[index] ||
-        !transport->heartbeat[index])
+    if (!transport->req[index] || !transport->rep[index])
       return 0;
   }
   if (transport->meta.mode == 3)
@@ -189,15 +180,15 @@ void closeTransport(Transport *transport)
       {
         sem_destroy(transport->req[index]);
         sem_destroy(transport->rep[index]);
-        sem_destroy(transport->heartbeat[index]);
       }
     }
     else
     {
-      sem_t *semaphores[] = {transport->req[index], transport->rep[index],
-                             transport->heartbeat[index]};
-      const char kinds[] = "qrh";
-      for (int semaphoreIndex = 0; semaphoreIndex < 3; ++semaphoreIndex)
+      sem_t *semaphores[] = {
+          transport->req[index],
+          transport->rep[index]};
+      const char kinds[] = "qr";
+      for (int semaphoreIndex = 0; semaphoreIndex < 2; ++semaphoreIndex)
         if (semaphores[semaphoreIndex])
         {
           sem_close(semaphores[semaphoreIndex]);
@@ -321,26 +312,8 @@ int waitMessage(Transport *transport, int actor, int reply, Message *message)
   return readMessage(transport, actor, reply, message);
 }
 
-void heartbeat(Transport *transport, int actor, double *last)
-{
-  double now = monotonic();
-  if (now - *last >= 0.1)
-  {
-    sem_post(transport->heartbeat[actor]);
-    *last = now;
-  }
-}
-
 int peersAlive(Transport *transport)
 {
-  for (int index = 0; index < transport->meta.count; ++index)
-    if (transport->peers[index])
-    {
-      while (sem_trywait(transport->heartbeat[index]) == 0)
-        transport->lastBeat[index] = monotonic();
-      if (monotonic() - transport->lastBeat[index] > 30)
-        return 0;
-    }
   for (int index = 0; index < transport->meta.count; ++index)
   {
     if (transport->peers[index] > 0 && kill(transport->peers[index], 0) < 0 &&
@@ -378,7 +351,6 @@ int waitReady(Transport *transport)
         if (result == 1)
         {
           transport->peers[index] = message.pid;
-          transport->lastBeat[index] = monotonic();
           ++connected;
         }
       }

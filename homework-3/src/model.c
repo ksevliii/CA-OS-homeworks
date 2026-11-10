@@ -171,7 +171,7 @@ int runModel(Engine *engine)
       }
       if (!peersAlive(engine->ipc))
       {
-        PORT_EVENT(engine, "ERROR: actor failure or heartbeat timeout");
+        PORT_EVENT(engine, "ERROR: participant terminated unexpectedly");
         engine->failed = 1;
         break;
       }
