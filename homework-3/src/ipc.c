@@ -97,7 +97,6 @@ int createTransport(Transport *transport)
     return 0;
   }
   transport->owner = 1;
-  transport->meta.version = PROTOCOL_VERSION;
   transport->meta.pid = (int)getpid();
   if (transport->meta.mode != 3)
   {
@@ -141,7 +140,6 @@ int attachTransport(Transport *transport, int actor)
   ssize_t count = read(descriptor, &transport->meta, sizeof(transport->meta));
   close(descriptor);
   if (count != sizeof(transport->meta) ||
-      transport->meta.version != PROTOCOL_VERSION ||
       transport->meta.count < 1 || transport->meta.count > ACTORS ||
       actor >= transport->meta.count || transport->meta.mode < 2 ||
       transport->meta.mode > 3 || transport->meta.pid <= 1 ||
@@ -249,7 +247,6 @@ int putMessage(Transport *transport, int actor, int reply, Message message)
   SOFT_ASSERT(transport != NULL, "Transport is required", 0);
   SOFT_ASSERT(actor >= 0 && actor < transport->meta.count,
               "Actor index out of range", 0);
-  message.version = PROTOCOL_VERSION;
   message.pid = (int)getpid();
   if (transport->meta.mode == 3)
   {
@@ -291,7 +288,7 @@ static int readMessage(Transport *transport, int actor, int reply,
     *message = reply ? transport->shared->slots[actor].reply
                      : transport->shared->slots[actor].request;
   }
-  return message->version == PROTOCOL_VERSION ? 1 : -1;
+  return 1;
 }
 
 int getMessage(Transport *transport, int actor, int reply, Message *message)

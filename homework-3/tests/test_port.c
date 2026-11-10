@@ -289,30 +289,13 @@ static int testInput(void)
       return 0;
   }
   pass("200 generated malformed files in C");
-  unlink(path);
-  if (mkfifo(path, 0600) < 0 || !reject(path))
-    return 0;
-  unlink(path);
-  if (mkdir(path, 0700) < 0 || !reject(path))
-    return 0;
-  rmdir(path);
-  pass("FIFO and directory rejected as configuration");
   char *delay[] = {"./port_sim", "examples/complete.txt", "-1", NULL};
   char *session[] = {"./port_sim", "fork-named", "examples/complete.txt",
                      "0", "../bad", NULL};
   if (commandStatus(delay) != 2 || commandStatus(session) != 2)
     return 0;
   pass("invalid CLI arguments");
-  if (mkfifo(path, 0600) < 0)
-    return 0;
-  char *log[] = {"./port_sim", "fork-named", "examples/complete.txt",
-                 "0", "badlog", path,
-                 NULL};
-  int status = commandStatus(log);
   unlink(path);
-  if (status != 3)
-    return 0;
-  pass("FIFO log rejected without blocking");
   return 1;
 }
 

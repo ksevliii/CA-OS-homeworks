@@ -38,7 +38,6 @@ int processRoleMain(int argc, char **argv, int role);
 #include <time.h>
 #include <unistd.h>
 #define ACTORS 82 /**< Maximum protocol slots, including the warehouse. */
-#define PROTOCOL_VERSION 1 
 /** @brief Participant roles; each instance has its own process. */
 enum
 {
@@ -64,8 +63,8 @@ enum
 /** @brief Fixed-size command or reply copied through shared slots or FIFO. */
 typedef struct
 {
-  int version, seq, action, ship, volume, duration, delay,
-      pid;              /**< Protocol identity, sequence, command, ship, portion, ticks, tick
+  int seq, action, ship, volume, duration, delay,
+      pid;              /**< Protocol sequence, command, ship, portion, ticks, tick
                            delay and sender PID. */
   int warehouseData[8]; /**< DRAIN snapshot/results; never contains pointers. */
 } Message;
@@ -90,8 +89,8 @@ typedef struct
  */
 typedef struct
 {
-  int version, pid, count, mode, role[ACTORS],
-      id[ACTORS]; /**< Protocol identity, owner PID, participant count,
+  int pid, count, mode, role[ACTORS],
+      id[ACTORS]; /**< Protocol owner PID, participant count,
                      transport mode and role mapping. */
 } Metadata;
 
