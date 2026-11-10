@@ -70,14 +70,12 @@ typedef struct
 } Message;
 /** @brief Require atomic-sized FIFO messages at compile time. */
 _Static_assert(sizeof(Message) <= PIPE_BUF, "Message must fit in one atomic FIFO write");
-/** @brief Single outstanding request and reply synchronized by three
- * semaphores. */
+
+/** @brief Single outstanding request and reply synchronized by two semaphores. */
 typedef struct
 {
-  Message request, reply; /**< Command and acknowledgement buffers. */
-  sem_t requestSem, replySem,
-      heartbeatSem; /**< Process-shared unnamed semaphores used only in
-                       fork-unnamed mode. */
+  Message request, reply;     /**< Command and acknowledgement buffers. */
+  sem_t requestSem, replySem; /**< Process-shared unnamed semaphores used only in fork-unnamed mode. */
 } Slot;
 /** @brief POSIX shared-memory mailboxes; contains no process-private pointers.
  */
@@ -100,13 +98,9 @@ typedef struct
   Metadata meta;  /**< Validated session metadata. */
   Shared *shared; /**< Locally mapped shared slots; NULL in FIFO mode. */
   int shmfd, claimfd, reqfd[ACTORS], repfd[ACTORS],
-      initialized; /**< Memory, claim and FIFO descriptors; number of
-                      initialized unnamed slots. */
-  sem_t *req[ACTORS], *rep[ACTORS],
-      *heartbeat[ACTORS];  /**< Local handles for request, reply and liveness
-                              semaphores. */
-  double lastBeat[ACTORS]; /**< Last observed heartbeat times on the monotonic
-                              clock. */
+      initialized;                  /**< Memory, claim and FIFO descriptors; number of
+                                       initialized unnamed slots. */
+  sem_t *req[ACTORS], *rep[ACTORS]; /**< Local request and reply semaphore handles. */
   pid_t children[ACTORS],
       peers[ACTORS]; /**< Forked child PIDs and registered peer PIDs. */
   int childCount,
@@ -211,9 +205,7 @@ int putMessage(Transport *transport, int actor, int reply, Message message);
 int waitMessage(Transport *transport, int actor, int reply, Message *message);
 /** @brief Try one message without blocking; return 1, 0 (not ready), or -1. */
 int getMessage(Transport *transport, int actor, int reply, Message *message);
-/** @brief Publish participant liveness at most once per 100 milliseconds. */
-void heartbeat(Transport *transport, int actor, double *last);
-/** @brief Check heartbeat age, process existence and child termination. */
+/** @brief Check process existence and termination of owned children. */
 int peersAlive(Transport *transport);
 /** @brief Wait for participant registration with bounded startup time. */
 int waitReady(Transport *transport);
