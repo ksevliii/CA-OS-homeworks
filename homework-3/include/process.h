@@ -38,9 +38,7 @@ int processRoleMain(int argc, char **argv, int role);
 #include <time.h>
 #include <unistd.h>
 #define ACTORS 82 /**< Maximum protocol slots, including the warehouse. */
-#define PROTOCOL_VERSION \
-  1 /**< Supported version of command and metadata layouts. */
-/* Only value messages cross process boundaries. Never share heap pointers. */
+#define PROTOCOL_VERSION 1 
 /** @brief Participant roles; each instance has its own process. */
 enum
 {
@@ -72,8 +70,7 @@ typedef struct
   int warehouseData[8]; /**< DRAIN snapshot/results; never contains pointers. */
 } Message;
 /** @brief Require atomic-sized FIFO messages at compile time. */
-_Static_assert(sizeof(Message) <= PIPE_BUF,
-               "Message must fit in one atomic FIFO write");
+_Static_assert(sizeof(Message) <= PIPE_BUF, "Message must fit in one atomic FIFO write");
 /** @brief Single outstanding request and reply synchronized by three
  * semaphores. */
 typedef struct
