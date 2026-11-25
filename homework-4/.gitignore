@@ -1,0 +1,15 @@
+/build/
+/docs/
+/port_server
+/port_dispatcher
+/port_sim
+/port_ship
+/port_tug
+/port_berth
+/port_crane
+/port_warehouse
+/port_observer
+/port_tests
+*.log
+*.d
+/doxygen-warnings.txt
